@@ -9,7 +9,8 @@ import { findUserByAuthId } from "../api/services/user";
 import { db } from "../db";
 import { type DatabaseUser, auth, sessionTable } from "../db/schema";
 
-globalThis.crypto = webcrypto as Crypto;
+// globalThis.crypto = webcrypto as Crypto;
+const cryptoInstance = webcrypto;
 export const adapter = new DrizzlePostgreSQLAdapter(db, sessionTable, auth);
 
 export const lucia = new Lucia(adapter, {

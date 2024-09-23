@@ -80,7 +80,7 @@ export const ShowDeploymentsCompose = ({ composeId }: Props) => {
 										{deployment.status}
 
 										<StatusTooltip
-											status={deployment?.status}
+											status={deployment.status}
 											className="size-2.5"
 										/>
 									</span>

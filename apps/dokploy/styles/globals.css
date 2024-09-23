@@ -173,3 +173,62 @@
     padding-top: 1rem !important;
   }
 }
+
+@supports not (selector(::-webkit-scrollbar-thumb)) {
+  html,
+  body {
+    scrollbar-color: var(--scroll-thumb-color, grey)
+      var(--scroll-track, transparent);
+    scrollbar-width: thin;
+  }
+}
+
+html,
+body {
+  --scroll-size: 10px;
+  --scroll-radius: 10px;
+  --scroll-track: rgb(0 0 0 / 40%);
+  --scroll-thumb-color: #dfdfdf;
+
+  scrollbar-color: var(--scroll-thumb-color, grey)
+    var(--scroll-track, transparent);
+  scrollbar-width: thin;
+  scrollbar-arrow-color: red;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: var(--scroll-size, 10px);
+  height: var(--scroll-size, 10px);
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background-color: var(--scroll-track, transparent);
+  border-radius: var(--scroll-track-radius, var(--scroll-radius));
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb-color, grey);
+  background-image: var(--scroll-thumb, none);
+  border-radius: var(--scroll-thumb-radius, var(--scroll-radius));
+}
+
+html::-webkit-scrollbar-button,
+body::-webkit-scrollbar-button {
+  display: none;
+  color: aquamarine;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
