@@ -22,7 +22,7 @@ import {
 } from "@/server/db/schema";
 import type { DeploymentJob } from "@/server/queues/queue-types";
 import { cleanQueuesByApplication, myQueue } from "@/server/queues/queueSetup";
-import { deploy } from "@/server/utils/deploy";
+import { deploy, rollback } from "@/server/utils/deploy";
 import { uploadFileSchema } from "@/utils/schema";
 import {
 	IS_CLOUD,
@@ -757,5 +757,40 @@ export const applicationRouter = createTRPCRouter({
 			}
 
 			return updatedApplication;
+		}),
+	rollback: protectedProcedure
+		.input(apiFindOneApplication)
+		.mutation(async ({ input, ctx }) => {
+			const application = await findApplicationById(input.applicationId);
+			if (
+				application.project.organizationId !== ctx.session.activeOrganizationId
+			) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "You are not authorized to rollback this application",
+				});
+			}
+			const jobData: DeploymentJob = {
+				applicationId: input.applicationId,
+				titleLog: "Rollback deployment",
+				descriptionLog: "",
+				type: "rollback",
+				applicationType: "application",
+				server: !!application.serverId,
+			};
+
+			if (IS_CLOUD && application.serverId) {
+				jobData.serverId = application.serverId;
+				await rollback(jobData);
+				return true;
+			}
+			await myQueue.add(
+				"deployments",
+				{ ...jobData },
+				{
+					removeOnComplete: true,
+					removeOnFail: true,
+				},
+			);
 		}),
 });

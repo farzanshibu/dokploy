@@ -6,7 +6,7 @@ import { Queue } from "@nerimity/mimiqueue";
 import { createClient } from "redis";
 import { logger } from "./logger.js";
 import { type DeployJob, deployJobSchema } from "./schema.js";
-import { deploy } from "./utils.js";
+import { deploy, rollback } from "./utils.js";
 
 const app = new Hono();
 const redisClient = createClient({
@@ -37,6 +37,17 @@ app.post("/deploy", zValidator("json", deployJobSchema), (c) => {
 	);
 });
 
+app.post("/rollback", zValidator("json", deployJobSchema), (c) => {
+	const data = c.req.valid("json");
+	rollbackQueue.add(data, { groupName: data.serverId });
+	return c.json(
+		{
+			message: "Rollback Added",
+		},
+		200,
+	);
+});
+
 app.get("/health", async (c) => {
 	return c.json({ status: "ok" });
 });
@@ -46,6 +57,15 @@ const queue = new Queue({
 	process: async (job: DeployJob) => {
 		logger.info("Deploying job", job);
 		return await deploy(job);
+	},
+	redisClient,
+});
+
+const rollbackQueue = new Queue({
+	name: "rollbacks",
+	process: async (job: DeployJob) => {
+		logger.info("Rolling back job", job);
+		return await rollback(job);
 	},
 	redisClient,
 });

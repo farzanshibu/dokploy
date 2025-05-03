@@ -11,7 +11,7 @@ import {
 } from "@/server/db/schema";
 import type { DeploymentJob } from "@/server/queues/queue-types";
 import { cleanQueuesByCompose, myQueue } from "@/server/queues/queueSetup";
-import { deploy } from "@/server/utils/deploy";
+import { deploy, rollback } from "@/server/utils/deploy";
 import { generatePassword } from "@/templates/utils";
 import {
 	IS_CLOUD,
@@ -722,5 +722,38 @@ export const composeRouter = createTRPCRouter({
 					message: `Error importing template: ${error instanceof Error ? error.message : error}`,
 				});
 			}
+		}),
+	rollback: protectedProcedure
+		.input(apiFindCompose)
+		.mutation(async ({ input, ctx }) => {
+			const compose = await findComposeById(input.composeId);
+			if (compose.project.organizationId !== ctx.session.activeOrganizationId) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "You are not authorized to rollback this compose",
+				});
+			}
+			const jobData: DeploymentJob = {
+				composeId: input.composeId,
+				titleLog: "Rollback deployment",
+				descriptionLog: "",
+				type: "rollback",
+				applicationType: "compose",
+				server: !!compose.serverId,
+			};
+
+			if (IS_CLOUD && compose.serverId) {
+				jobData.serverId = compose.serverId;
+				await rollback(jobData);
+				return true;
+			}
+			await myQueue.add(
+				"deployments",
+				{ ...jobData },
+				{
+					removeOnComplete: true,
+					removeOnFail: true,
+				},
+			);
 		}),
 });

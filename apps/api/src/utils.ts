@@ -7,6 +7,9 @@ import {
 	updateApplicationStatus,
 	updateCompose,
 	updatePreviewDeployment,
+	rollbackRemoteApplication,
+	rollbackRemoteCompose,
+	rollbackRemotePreviewApplication,
 } from "@dokploy/server";
 import type { DeployJob } from "./schema";
 
@@ -62,6 +65,59 @@ export const deploy = async (job: DeployJob) => {
 						previewDeploymentId: job.previewDeploymentId,
 					});
 				}
+			}
+		}
+	} catch (_) {
+		if (job.applicationType === "application") {
+			await updateApplicationStatus(job.applicationId, "error");
+		} else if (job.applicationType === "compose") {
+			await updateCompose(job.composeId, {
+				composeStatus: "error",
+			});
+		} else if (job.applicationType === "application-preview") {
+			await updatePreviewDeployment(job.previewDeploymentId, {
+				previewStatus: "error",
+			});
+		}
+	}
+
+	return true;
+};
+
+export const rollback = async (job: DeployJob) => {
+	try {
+		if (job.applicationType === "application") {
+			await updateApplicationStatus(job.applicationId, "rolling-back");
+			if (job.server) {
+				await rollbackRemoteApplication({
+					applicationId: job.applicationId,
+					titleLog: job.titleLog,
+					descriptionLog: job.descriptionLog,
+				});
+			}
+		} else if (job.applicationType === "compose") {
+			await updateCompose(job.composeId, {
+				composeStatus: "rolling-back",
+			});
+
+			if (job.server) {
+				await rollbackRemoteCompose({
+					composeId: job.composeId,
+					titleLog: job.titleLog,
+					descriptionLog: job.descriptionLog,
+				});
+			}
+		} else if (job.applicationType === "application-preview") {
+			await updatePreviewDeployment(job.previewDeploymentId, {
+				previewStatus: "rolling-back",
+			});
+			if (job.server) {
+				await rollbackRemotePreviewApplication({
+					applicationId: job.applicationId,
+					titleLog: job.titleLog,
+					descriptionLog: job.descriptionLog,
+					previewDeploymentId: job.previewDeploymentId,
+				});
 			}
 		}
 	} catch (_) {
