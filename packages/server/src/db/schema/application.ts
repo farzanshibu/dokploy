@@ -394,6 +394,7 @@ export const apiDeployApplication = createSchema
 		applicationId: z.string().min(1),
 		title: z.string().optional(),
 		description: z.string().optional(),
+		commitHash: z.string().optional(),
 	});
 
 export const apiRedeployApplication = createSchema
@@ -404,6 +405,7 @@ export const apiRedeployApplication = createSchema
 		applicationId: z.string().min(1),
 		title: z.string().optional(),
 		description: z.string().optional(),
+		commitHash: z.string().optional(),
 	});
 
 export const apiReloadApplication = createSchema
