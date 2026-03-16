@@ -241,6 +241,7 @@ export default async function handler(
 				applicationId: application.applicationId as string,
 				titleLog: deploymentTitle,
 				...(deploymentHash && { descriptionLog: `Hash: ${deploymentHash}` }),
+				...(deploymentHash && { commitHash: deploymentHash }),
 				type: "deploy",
 				applicationType: "application",
 				server: !!application.serverId,

@@ -388,6 +388,7 @@ export const composeRouter = createTRPCRouter({
 				type: "deploy",
 				applicationType: "compose",
 				descriptionLog: input.description || "",
+				...(input.commitHash && { commitHash: input.commitHash }),
 				server: !!compose.serverId,
 			};
 
@@ -437,6 +438,7 @@ export const composeRouter = createTRPCRouter({
 				type: "redeploy",
 				applicationType: "compose",
 				descriptionLog: input.description || "",
+				...(input.commitHash && { commitHash: input.commitHash }),
 				server: !!compose.serverId,
 			};
 			if (IS_CLOUD && compose.serverId) {

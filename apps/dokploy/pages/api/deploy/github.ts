@@ -121,6 +121,7 @@ export default async function handler(
 					applicationId: app.applicationId as string,
 					titleLog: deploymentTitle,
 					descriptionLog: `Hash: ${deploymentHash}`,
+					commitHash: deploymentHash,
 					type: "deploy",
 					applicationType: "application",
 					server: !!app.serverId,
@@ -162,6 +163,7 @@ export default async function handler(
 					type: "deploy",
 					applicationType: "compose",
 					descriptionLog: `Hash: ${deploymentHash}`,
+					commitHash: deploymentHash,
 					server: !!composeApp.serverId,
 				};
 
@@ -234,6 +236,7 @@ export default async function handler(
 					applicationId: app.applicationId as string,
 					titleLog: deploymentTitle,
 					descriptionLog: `Hash: ${deploymentHash}`,
+					commitHash: deploymentHash,
 					type: "deploy",
 					applicationType: "application",
 					server: !!app.serverId,
@@ -284,6 +287,7 @@ export default async function handler(
 					type: "deploy",
 					applicationType: "compose",
 					descriptionLog: `Hash: ${deploymentHash}`,
+					commitHash: deploymentHash,
 					server: !!composeApp.serverId,
 				};
 
