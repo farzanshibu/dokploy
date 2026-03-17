@@ -338,8 +338,33 @@ export const ShowDeployments = ({
 													)}
 												</button>
 											)}
-											{/* Hash (from description) - shown in compact form */}
-											{deployment.description?.trim() && (
+											{/* Commit Hash - shown with copy functionality */}
+											{deployment.commitHash && (
+												<div className="flex items-center gap-2">
+													<span
+														className="text-xs text-muted-foreground font-mono cursor-pointer hover:text-foreground transition-colors"
+														role="button"
+														tabIndex={0}
+														title={`Click to copy full hash: ${deployment.commitHash}`}
+														onClick={() => {
+															copy(deployment.commitHash!);
+															toast.success("Commit hash copied to clipboard");
+														}}
+														onKeyDown={(event) => {
+															if (event.key === "Enter" || event.key === " ") {
+																event.preventDefault();
+																copy(deployment.commitHash!);
+																toast.success("Commit hash copied to clipboard");
+															}
+														}}
+													>
+														Commit: {deployment.commitHash.substring(0, 7)}
+													</span>
+													<Copy className="h-3 w-3 text-muted-foreground" />
+												</div>
+											)}
+											{/* Fallback to description if no commitHash */}
+											{!deployment.commitHash && deployment.description?.trim() && (
 												<span className="text-xs text-muted-foreground font-mono">
 													{deployment.description}
 												</span>

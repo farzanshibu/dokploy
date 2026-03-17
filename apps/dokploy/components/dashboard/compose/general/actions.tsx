@@ -3,6 +3,8 @@ import { Ban, CheckCircle2, RefreshCcw, Rocket, Terminal } from "lucide-react";
 import { useRouter } from "next/router";
 import { toast } from "sonner";
 import { DialogAction } from "@/components/shared/dialog-action";
+import { ComposeDeployDialog } from "./compose-deploy-dialog";
+import { ComposeReloadDialog } from "./compose-reload-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -39,13 +41,11 @@ export const ComposeActions = ({ composeId }: Props) => {
 		<div className="flex flex-row gap-4 w-full flex-wrap ">
 			<TooltipProvider delayDuration={0} disableHoverableContent={false}>
 				{canDeploy && (
-					<DialogAction
-						title="Deploy Compose"
-						description="Are you sure you want to deploy this compose?"
-						type="default"
-						onClick={async () => {
+					<ComposeDeployDialog
+						onDeploy={async (commitHash) => {
 							await deploy({
 								composeId: composeId,
+								commitHash,
 							})
 								.then(() => {
 									toast.success("Compose deployed successfully");
@@ -58,6 +58,7 @@ export const ComposeActions = ({ composeId }: Props) => {
 									toast.error("Error deploying compose");
 								});
 						}}
+						isLoading={data?.composeStatus === "running"}
 					>
 						<Button
 							variant="default"
@@ -80,16 +81,14 @@ export const ComposeActions = ({ composeId }: Props) => {
 								</TooltipPrimitive.Portal>
 							</Tooltip>
 						</Button>
-					</DialogAction>
+					</ComposeDeployDialog>
 				)}
 				{canDeploy && (
-					<DialogAction
-						title="Reload Compose"
-						description="Are you sure you want to reload this compose?"
-						type="default"
-						onClick={async () => {
+					<ComposeReloadDialog
+						onReload={async (commitHash) => {
 							await redeploy({
 								composeId: composeId,
+								commitHash,
 							})
 								.then(() => {
 									toast.success("Compose reloaded successfully");
@@ -99,6 +98,7 @@ export const ComposeActions = ({ composeId }: Props) => {
 									toast.error("Error reloading compose");
 								});
 						}}
+						isLoading={data?.composeStatus === "running"}
 					>
 						<Button
 							variant="secondary"
@@ -119,7 +119,7 @@ export const ComposeActions = ({ composeId }: Props) => {
 								</TooltipPrimitive.Portal>
 							</Tooltip>
 						</Button>
-					</DialogAction>
+					</ComposeReloadDialog>
 				)}
 				{canDeploy &&
 					(data?.composeType === "docker-compose" &&

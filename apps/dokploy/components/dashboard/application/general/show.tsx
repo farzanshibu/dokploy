@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { ShowBuildChooseForm } from "@/components/dashboard/application/build/show";
 import { ShowProviderForm } from "@/components/dashboard/application/general/generic/show";
 import { DialogAction } from "@/components/shared/dialog-action";
+import { DeployDialog } from "./deploy-dialog";
+import { RebuildDialog } from "./rebuild-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -61,13 +63,11 @@ export const ShowGeneralApplication = ({ applicationId }: Props) => {
 				<CardContent className="flex flex-row gap-4 flex-wrap">
 					<TooltipProvider delayDuration={0} disableHoverableContent={false}>
 						{canDeploy && (
-							<DialogAction
-								title="Deploy Application"
-								description="Are you sure you want to deploy this application?"
-								type="default"
-								onClick={async () => {
+							<DeployDialog
+								onDeploy={async (commitHash) => {
 									await deploy({
 										applicationId: applicationId,
+										commitHash,
 									})
 										.then(() => {
 											toast.success("Application deployed successfully");
@@ -80,6 +80,7 @@ export const ShowGeneralApplication = ({ applicationId }: Props) => {
 											toast.error("Error deploying application");
 										});
 								}}
+								isLoading={data?.applicationStatus === "running"}
 							>
 								<Button
 									variant="default"
@@ -103,7 +104,7 @@ export const ShowGeneralApplication = ({ applicationId }: Props) => {
 										</TooltipPrimitive.Portal>
 									</Tooltip>
 								</Button>
-							</DialogAction>
+							</DeployDialog>
 						)}
 						{canDeploy && (
 							<DialogAction
@@ -146,13 +147,11 @@ export const ShowGeneralApplication = ({ applicationId }: Props) => {
 							</DialogAction>
 						)}
 						{canDeploy && (
-							<DialogAction
-								title="Rebuild Application"
-								description="Are you sure you want to rebuild this application?"
-								type="default"
-								onClick={async () => {
+							<RebuildDialog
+								onRebuild={async (commitHash) => {
 									await redeploy({
 										applicationId: applicationId,
+										commitHash,
 									})
 										.then(() => {
 											toast.success("Application rebuilt successfully");
@@ -162,6 +161,7 @@ export const ShowGeneralApplication = ({ applicationId }: Props) => {
 											toast.error("Error rebuilding application");
 										});
 								}}
+								isLoading={data?.applicationStatus === "running"}
 							>
 								<Button
 									variant="secondary"
@@ -185,7 +185,7 @@ export const ShowGeneralApplication = ({ applicationId }: Props) => {
 										</TooltipPrimitive.Portal>
 									</Tooltip>
 								</Button>
-							</DialogAction>
+							</RebuildDialog>
 						)}
 
 						{canDeploy && data?.applicationStatus === "idle" ? (
