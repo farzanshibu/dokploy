@@ -124,10 +124,10 @@ interface CloneGithubRepository {
 	serverId: string | null;
 	outputPathOverride?: string;
 }
-export const cloneGithubRepository = async ({
-	type = "application",
-	...entity
-}: CloneGithubRepository) => {
+export const cloneGithubRepository = async (
+	{ type = "application", ...entity }: CloneGithubRepository,
+	commitHash?: string,
+) => {
 	let command = "set -e;";
 	const isCompose = type === "compose";
 	const {
@@ -168,6 +168,13 @@ export const cloneGithubRepository = async ({
 
 	command += `echo "Cloning Repo ${repoclone} to ${outputPath}: ✅";`;
 	command += `git clone --branch ${branch} --depth 1 ${enableSubmodules ? "--recurse-submodules" : ""} ${cloneUrl} ${outputPath} --progress;`;
+
+	// Checkout specific commit if provided
+	if (commitHash) {
+		command += `echo "Checking out commit ${commitHash}: ✅";`;
+		command += `git -C ${outputPath} fetch --depth 1 origin ${commitHash};`;
+		command += `git -C ${outputPath} checkout ${commitHash};`;
+	}
 
 	return command;
 };

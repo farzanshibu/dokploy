@@ -111,10 +111,10 @@ interface CloneGitlabRepository {
 	outputPathOverride?: string;
 }
 
-export const cloneGitlabRepository = async ({
-	type = "application",
-	...entity
-}: CloneGitlabRepository) => {
+export const cloneGitlabRepository = async (
+	{ type = "application", ...entity }: CloneGitlabRepository,
+	commitHash?: string,
+) => {
 	let command = "set -e;";
 	const {
 		appName,
@@ -151,6 +151,14 @@ export const cloneGitlabRepository = async ({
 	const cloneUrl = getGitlabCloneUrl(gitlab, repoClone);
 	command += `echo "Cloning Repo ${repoClone} to ${outputPath}: ✅";`;
 	command += `git clone --branch ${gitlabBranch} --depth 1 ${enableSubmodules ? "--recurse-submodules" : ""} ${cloneUrl} ${outputPath} --progress;`;
+
+	// Checkout specific commit if provided
+	if (commitHash) {
+		command += `echo "Checking out commit ${commitHash}: ✅";`;
+		command += `git -C ${outputPath} fetch --depth 1 origin ${commitHash};`;
+		command += `git -C ${outputPath} checkout ${commitHash};`;
+	}
+
 	return command;
 };
 

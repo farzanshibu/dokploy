@@ -17,10 +17,10 @@ interface CloneGitRepository {
 	outputPathOverride?: string;
 }
 
-export const cloneGitRepository = async ({
-	type = "application",
-	...entity
-}: CloneGitRepository) => {
+export const cloneGitRepository = async (
+	{ type = "application", ...entity }: CloneGitRepository,
+	commitHash?: string,
+) => {
 	let command = "set -e;";
 	const {
 		appName,
@@ -83,6 +83,13 @@ export const cloneGitRepository = async ({
 				exit 1;
 			fi
 			`;
+
+	// Checkout specific commit if provided
+	if (commitHash) {
+		command += `echo "Checking out commit ${commitHash}: ✅";`;
+		command += `git -C ${outputPath} fetch --depth 1 origin ${commitHash};`;
+		command += `git -C ${outputPath} checkout ${commitHash};`;
+	}
 
 	return command;
 };

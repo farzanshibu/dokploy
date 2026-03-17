@@ -90,10 +90,10 @@ interface CloneBitbucketRepository {
 	outputPathOverride?: string;
 }
 
-export const cloneBitbucketRepository = async ({
-	type = "application",
-	...entity
-}: CloneBitbucketRepository) => {
+export const cloneBitbucketRepository = async (
+	{ type = "application", ...entity }: CloneBitbucketRepository,
+	commitHash?: string,
+) => {
 	let command = "set -e;";
 	const {
 		appName,
@@ -126,6 +126,14 @@ export const cloneBitbucketRepository = async ({
 	const cloneUrl = getBitbucketCloneUrl(bitbucket, repoclone);
 	command += `echo "Cloning Repo ${repoclone} to ${outputPath}: ✅";`;
 	command += `git clone --branch ${bitbucketBranch} --depth 1 ${enableSubmodules ? "--recurse-submodules" : ""} ${cloneUrl} ${outputPath} --progress;`;
+
+	// Checkout specific commit if provided
+	if (commitHash) {
+		command += `echo "Checking out commit ${commitHash}: ✅";`;
+		command += `git -C ${outputPath} fetch --depth 1 origin ${commitHash};`;
+		command += `git -C ${outputPath} checkout ${commitHash};`;
+	}
+
 	return command;
 };
 

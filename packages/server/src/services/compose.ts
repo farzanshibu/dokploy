@@ -209,10 +209,12 @@ export const deployCompose = async ({
 	composeId,
 	titleLog = "Manual deployment",
 	descriptionLog = "",
+	commitHash,
 }: {
 	composeId: string;
 	titleLog: string;
 	descriptionLog: string;
+	commitHash?: string;
 }) => {
 	const compose = await findComposeById(composeId);
 
@@ -223,6 +225,7 @@ export const deployCompose = async ({
 		composeId: composeId,
 		title: titleLog,
 		description: descriptionLog,
+		commitHash: commitHash,
 	});
 
 	try {
@@ -232,15 +235,15 @@ export const deployCompose = async ({
 		};
 		let command = "set -e;";
 		if (compose.sourceType === "github") {
-			command += await cloneGithubRepository(entity);
+			command += await cloneGithubRepository(entity, commitHash);
 		} else if (compose.sourceType === "gitlab") {
-			command += await cloneGitlabRepository(entity);
+			command += await cloneGitlabRepository(entity, commitHash);
 		} else if (compose.sourceType === "bitbucket") {
-			command += await cloneBitbucketRepository(entity);
+			command += await cloneBitbucketRepository(entity, commitHash);
 		} else if (compose.sourceType === "git") {
-			command += await cloneGitRepository(entity);
+			command += await cloneGitRepository(entity, commitHash);
 		} else if (compose.sourceType === "gitea") {
-			command += await cloneGiteaRepository(entity);
+			command += await cloneGiteaRepository(entity, commitHash);
 		} else if (compose.sourceType === "raw") {
 			command += getCreateComposeFileCommand(entity);
 		}
@@ -332,10 +335,12 @@ export const rebuildCompose = async ({
 	composeId,
 	titleLog = "Rebuild deployment",
 	descriptionLog = "",
+	commitHash,
 }: {
 	composeId: string;
 	titleLog: string;
 	descriptionLog: string;
+	commitHash?: string;
 }) => {
 	const compose = await findComposeById(composeId);
 
@@ -343,6 +348,7 @@ export const rebuildCompose = async ({
 		composeId: composeId,
 		title: titleLog,
 		description: descriptionLog,
+		commitHash: commitHash,
 	});
 
 	try {

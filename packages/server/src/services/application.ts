@@ -169,10 +169,12 @@ export const deployApplication = async ({
 	applicationId,
 	titleLog = "Manual deployment",
 	descriptionLog = "",
+	commitHash,
 }: {
 	applicationId: string;
 	titleLog: string;
 	descriptionLog: string;
+	commitHash?: string;
 }) => {
 	const application = await findApplicationById(applicationId);
 	const serverId = application.buildServerId || application.serverId;
@@ -186,20 +188,21 @@ export const deployApplication = async ({
 		applicationId: applicationId,
 		title: titleLog,
 		description: descriptionLog,
+		commitHash: commitHash,
 	});
 
 	try {
 		let command = "set -e;";
 		if (application.sourceType === "github") {
-			command += await cloneGithubRepository(applicationEntity);
+			command += await cloneGithubRepository(applicationEntity, commitHash);
 		} else if (application.sourceType === "gitlab") {
-			command += await cloneGitlabRepository(applicationEntity);
+			command += await cloneGitlabRepository(applicationEntity, commitHash);
 		} else if (application.sourceType === "gitea") {
-			command += await cloneGiteaRepository(applicationEntity);
+			command += await cloneGiteaRepository(applicationEntity, commitHash);
 		} else if (application.sourceType === "bitbucket") {
-			command += await cloneBitbucketRepository(applicationEntity);
+			command += await cloneBitbucketRepository(applicationEntity, commitHash);
 		} else if (application.sourceType === "git") {
-			command += await cloneGitRepository(applicationEntity);
+			command += await cloneGitRepository(applicationEntity, commitHash);
 		} else if (application.sourceType === "docker") {
 			command += await buildRemoteDocker(application);
 		}
@@ -287,10 +290,12 @@ export const rebuildApplication = async ({
 	applicationId,
 	titleLog = "Rebuild deployment",
 	descriptionLog = "",
+	commitHash,
 }: {
 	applicationId: string;
 	titleLog: string;
 	descriptionLog: string;
+	commitHash?: string;
 }) => {
 	const application = await findApplicationById(applicationId);
 	const serverId = application.buildServerId || application.serverId;
@@ -300,6 +305,7 @@ export const rebuildApplication = async ({
 		applicationId: applicationId,
 		title: titleLog,
 		description: descriptionLog,
+		commitHash: commitHash,
 	});
 
 	try {
@@ -354,11 +360,13 @@ export const deployPreviewApplication = async ({
 	titleLog = "Preview Deployment",
 	descriptionLog = "",
 	previewDeploymentId,
+	commitHash,
 }: {
 	applicationId: string;
 	titleLog: string;
 	descriptionLog: string;
 	previewDeploymentId: string;
+	commitHash?: string;
 }) => {
 	const application = await findApplicationById(applicationId);
 
@@ -366,6 +374,7 @@ export const deployPreviewApplication = async ({
 		title: titleLog,
 		description: descriptionLog,
 		previewDeploymentId: previewDeploymentId,
+		commitHash: commitHash,
 	});
 
 	const previewDeployment =
@@ -429,7 +438,7 @@ export const deployPreviewApplication = async ({
 				...application,
 				appName: previewDeployment.appName,
 				branch: previewDeployment.branch,
-			});
+			}, commitHash);
 			command += await getBuildCommand(application);
 
 			const commandWithLog = `(${command}) >> ${deployment.logPath} 2>&1`;
@@ -474,11 +483,13 @@ export const rebuildPreviewApplication = async ({
 	titleLog = "Rebuild Preview Deployment",
 	descriptionLog = "",
 	previewDeploymentId,
+	commitHash,
 }: {
 	applicationId: string;
 	titleLog: string;
 	descriptionLog: string;
 	previewDeploymentId: string;
+	commitHash?: string;
 }) => {
 	const application = await findApplicationById(applicationId);
 	const previewDeployment =
@@ -488,6 +499,7 @@ export const rebuildPreviewApplication = async ({
 		title: titleLog,
 		description: descriptionLog,
 		previewDeploymentId: previewDeploymentId,
+		commitHash: commitHash,
 	});
 
 	const previewDomain = getDomainHost(previewDeployment?.domain as Domain);
