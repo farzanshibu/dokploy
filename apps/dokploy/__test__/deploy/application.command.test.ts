@@ -214,6 +214,8 @@ describe("deployApplication - Command Generation Tests", () => {
 				customGitUrl: "https://github.com/Dokploy/examples.git",
 				buildPath: "/astro",
 			}),
+			undefined,
+			expect.any(String),
 		);
 
 		expect(execProcess.execAsync).toHaveBeenCalledWith(
@@ -243,6 +245,8 @@ describe("deployApplication - Command Generation Tests", () => {
 			expect.objectContaining({
 				buildType: "railpack",
 			}),
+			undefined,
+			expect.any(String),
 		);
 
 		expect(execProcess.execAsync).toHaveBeenCalledWith(
@@ -283,5 +287,27 @@ describe("deployApplication - Command Generation Tests", () => {
 		const fullCommand = execCalls[0]?.[0];
 
 		expect(fullCommand).toContain(">> /tmp/test-deployment.log 2>&1");
+	});
+
+	it("should checkout a specific commit when commit hash is provided", async () => {
+		vi.mocked(builders.getBuildCommand).mockResolvedValue("nixpacks build");
+		await deployApplication({
+			applicationId: "test-app-id",
+			titleLog: "Specific commit deploy",
+			descriptionLog: "",
+			commitHash: "abcdef1234567890",
+		});
+
+		expect(deploymentService.createDeployment).toHaveBeenCalledWith(
+			expect.objectContaining({
+				commitHash: "abcdef1234567890",
+			}),
+		);
+		expect(execProcess.execAsync).toHaveBeenCalledWith(
+			expect.stringContaining("git -C"),
+		);
+		expect(execProcess.execAsync).toHaveBeenCalledWith(
+			expect.stringMatching(/checkout\s+['"]?abcdef1234567890['"]?/),
+		);
 	});
 });

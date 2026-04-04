@@ -155,6 +155,7 @@ export const createDeployment = async (
 				status: "running",
 				logPath: logFilePath,
 				description: deployment.description || "",
+				commitHash: deployment.commitHash ?? null,
 				startedAt: new Date().toISOString(),
 				...(application.buildServerId && {
 					buildServerId: application.buildServerId,
@@ -177,6 +178,7 @@ export const createDeployment = async (
 				status: "error",
 				logPath: "",
 				description: deployment.description || "",
+				commitHash: deployment.commitHash ?? null,
 				errorMessage: `An error have occurred: ${error instanceof Error ? error.message : error}`,
 				startedAt: new Date().toISOString(),
 				finishedAt: new Date().toISOString(),
@@ -313,6 +315,7 @@ echo "Initializing deployment\n" >> ${logFilePath};
 				composeId: deployment.composeId,
 				title: deployment.title || "Deployment",
 				description: deployment.description || "",
+				commitHash: deployment.commitHash ?? null,
 				status: "running",
 				logPath: logFilePath,
 				startedAt: new Date().toISOString(),
@@ -334,6 +337,7 @@ echo "Initializing deployment\n" >> ${logFilePath};
 				status: "error",
 				logPath: "",
 				description: deployment.description || "",
+				commitHash: deployment.commitHash ?? null,
 				errorMessage: `An error have occurred: ${error instanceof Error ? error.message : error}`,
 				startedAt: new Date().toISOString(),
 				finishedAt: new Date().toISOString(),
@@ -829,9 +833,6 @@ const centralizedDeploymentsWith = {
 	server: {
 		columns: { serverId: true, name: true, serverType: true },
 	},
-	buildServer: {
-		columns: { serverId: true, name: true, serverType: true },
-	},
 } as const;
 
 async function getApplicationIdsInOrg(
@@ -913,6 +914,28 @@ export const findAllDeploymentsCentralized = async (
 				: or(...conditions);
 
 	return db.query.deployments.findMany({
+		columns: {
+			deploymentId: true,
+			title: true,
+			description: true,
+			commitHash: true,
+			status: true,
+			logPath: true,
+			pid: true,
+			applicationId: true,
+			composeId: true,
+			serverId: true,
+			isPreviewDeployment: true,
+			previewDeploymentId: true,
+			createdAt: true,
+			startedAt: true,
+			finishedAt: true,
+			errorMessage: true,
+			scheduleId: true,
+			backupId: true,
+			rollbackId: true,
+			volumeBackupId: true,
+		},
 		where: whereClause,
 		orderBy: desc(deployments.createdAt),
 		with: centralizedDeploymentsWith,

@@ -27,6 +27,7 @@ import {
 	writeConfig,
 	writeConfigRemote,
 } from "@dokploy/server";
+import { getGitHistory } from "@dokploy/server/utils/providers/git";
 import { db } from "@dokploy/server/db";
 import {
 	addNewService,
@@ -321,6 +322,7 @@ export const applicationRouter = createTRPCRouter({
 				applicationId: input.applicationId,
 				titleLog: input.title || "Rebuild deployment",
 				descriptionLog: input.description || "",
+				commitHash: input.commitHash,
 				type: "redeploy",
 				applicationType: "application",
 				server: !!application.serverId,
@@ -678,6 +680,7 @@ export const applicationRouter = createTRPCRouter({
 				applicationId: input.applicationId,
 				titleLog: input.title || "Manual deployment",
 				descriptionLog: input.description || "",
+				commitHash: input.commitHash,
 				type: "deploy",
 				applicationType: "application",
 				server: !!application.serverId,
@@ -1078,5 +1081,26 @@ export const applicationRouter = createTRPCRouter({
 				items,
 				total: countResult[0]?.count ?? 0,
 			};
+		}),
+
+	getGitHistory: protectedProcedure
+		.input(
+			z.object({
+				applicationId: z.string().min(1),
+				limit: z.number().min(1).max(100).default(10),
+			}),
+		)
+		.query(async ({ ctx, input }) => {
+			await checkServicePermissionAndAccess(ctx, input.applicationId, {
+				deployment: ["read"],
+			});
+			const application = await findApplicationById(input.applicationId);
+			const serverId = application.buildServerId || application.serverId;
+			return getGitHistory({
+				appName: application.appName,
+				type: "application",
+				serverId: serverId || null,
+				limit: input.limit,
+			});
 		}),
 });

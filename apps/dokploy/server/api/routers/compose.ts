@@ -31,6 +31,7 @@ import {
 	updateCompose,
 	updateDeploymentStatus,
 } from "@dokploy/server";
+import { getGitHistory } from "@dokploy/server/utils/providers/git";
 import { db } from "@dokploy/server/db";
 import {
 	addNewService,
@@ -388,6 +389,7 @@ export const composeRouter = createTRPCRouter({
 				type: "deploy",
 				applicationType: "compose",
 				descriptionLog: input.description || "",
+				commitHash: input.commitHash,
 				server: !!compose.serverId,
 			};
 
@@ -437,6 +439,7 @@ export const composeRouter = createTRPCRouter({
 				type: "redeploy",
 				applicationType: "compose",
 				descriptionLog: input.description || "",
+				commitHash: input.commitHash,
 				server: !!compose.serverId,
 			};
 			if (IS_CLOUD && compose.serverId) {
@@ -1081,5 +1084,25 @@ export const composeRouter = createTRPCRouter({
 				items,
 				total: countResult[0]?.count ?? 0,
 			};
+		}),
+
+	getGitHistory: protectedProcedure
+		.input(
+			z.object({
+				composeId: z.string().min(1),
+				limit: z.number().min(1).max(100).default(10),
+			}),
+		)
+		.query(async ({ ctx, input }) => {
+			await checkServicePermissionAndAccess(ctx, input.composeId, {
+				deployment: ["read"],
+			});
+			const composeData = await findComposeById(input.composeId);
+			return getGitHistory({
+				appName: composeData.appName,
+				type: "compose",
+				serverId: composeData.serverId || null,
+				limit: input.limit,
+			});
 		}),
 });

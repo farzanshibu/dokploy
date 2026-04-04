@@ -4,6 +4,7 @@ import {
 	findSSHKeyById,
 	updateSSHKeyById,
 } from "@dokploy/server/services/ssh-key";
+import { quote } from "shell-quote";
 import { execAsync, execAsyncRemote } from "../process/execAsync";
 
 interface CloneGitRepository {
@@ -155,6 +156,43 @@ interface Props {
 	serverId: string | null;
 }
 
+interface CheckoutProps extends Props {
+	commitHash: string;
+}
+
+export const getCheckoutCommitCommand = ({
+	appName,
+	type = "application",
+	serverId,
+	commitHash,
+}: CheckoutProps) => {
+	const { COMPOSE_PATH, APPLICATIONS_PATH } = paths(!!serverId);
+	const basePath = type === "compose" ? COMPOSE_PATH : APPLICATIONS_PATH;
+	const outputPath = join(basePath, appName, "code");
+	const gitDirectoryPath = join(outputPath, ".git");
+	const quotedOutputPath = quote([outputPath]);
+	const quotedGitDirectoryPath = quote([gitDirectoryPath]);
+	const quotedCommitHash = quote([commitHash]);
+	// First try `git fetch --depth 1 origin <sha>` which works when the server
+	// supports `allowReachableSHA1InWant` (GitHub, modern GitLab, etc.).
+	// If that fails (e.g. older Bitbucket Server, some self-hosted GitLab),
+	// fall back to fetching the default branch with enough depth and then
+	// checking out the SHA from the local history.
+	return [
+		`echo "Checking out commit" ${quotedCommitHash};`,
+		`if [ -d ${quotedGitDirectoryPath} ]; then`,
+		`if ! git -C ${quotedOutputPath} fetch --depth 1 origin ${quotedCommitHash} 2>/dev/null; then`,
+		`echo "Direct SHA fetch not supported, falling back to branch fetch...";`,
+		`git -C ${quotedOutputPath} fetch --unshallow 2>/dev/null || git -C ${quotedOutputPath} fetch origin 2>/dev/null || true;`,
+		"fi;",
+		`git -C ${quotedOutputPath} checkout ${quotedCommitHash};`,
+		"else",
+		`echo "Error: .git directory not found at" ${quotedGitDirectoryPath} ". Cannot check out commit" ${quotedCommitHash};`,
+		"exit 1;",
+		"fi;",
+	].join(" ");
+};
+
 export const getGitCommitInfo = async ({
 	appName,
 	type = "application",
@@ -188,4 +226,48 @@ export const getGitCommitInfo = async ({
 		return null;
 	}
 	return result;
+};
+
+export const getGitHistory = async ({
+	appName,
+	type = "application",
+	serverId,
+	limit = 10,
+}: Props & { limit?: number }) => {
+	const { COMPOSE_PATH, APPLICATIONS_PATH } = paths(!!serverId);
+	const basePath = type === "compose" ? COMPOSE_PATH : APPLICATIONS_PATH;
+	const outputPath = join(basePath, appName, "code");
+	const quotedOutputPath = quote([outputPath]);
+	const safeLimit = Math.floor(Math.max(1, Math.min(100, limit)));
+	let stdoutResult = "";
+	try {
+		const gitCommand = `git -C ${quotedOutputPath} log -${safeLimit} --pretty=format:"%H%x1f%s%x1f%an%x1f%ai"`;
+		if (serverId) {
+			const { stdout } = await execAsyncRemote(serverId, gitCommand);
+			stdoutResult = stdout.trim();
+		} else {
+			const { stdout } = await execAsync(gitCommand);
+			stdoutResult = stdout.trim();
+		}
+
+		if (!stdoutResult) {
+			return [];
+		}
+
+		return stdoutResult
+			.split("\n")
+			.filter(Boolean)
+			.map((line) => {
+				const parts = line.split("\x1f");
+				return {
+					hash: parts[0]?.trim() || "",
+					message: parts[1]?.trim() || "",
+					author: parts[2]?.trim() || "",
+					date: parts[3]?.trim() || "",
+				};
+			});
+	} catch (error) {
+		console.error(`Error getting git history for ${type} '${appName}': ${error}`);
+		return [];
+	}
 };
